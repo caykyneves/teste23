@@ -52,7 +52,7 @@ const voosDisponiveis = [
         paradas: "1 Parada",
         origem: "Rio de Janeiro (SDU)",
         destino: "São Paulo (GRU)",
-        preco: 480,
+        preco: 1200, // Preço mais alto para teste
         numParadas: 1
     },
     {
@@ -65,7 +65,7 @@ const voosDisponiveis = [
         paradas: "2 Paradas",
         origem: "São Paulo (GRU)",
         destino: "Brasília (BSB)",
-        preco: 550,
+        preco: 2500, // Preço mais alto para teste
         numParadas: 2
     },
     {
@@ -80,6 +80,19 @@ const voosDisponiveis = [
         destino: "Rio de Janeiro (SDU)",
         preco: 320,
         numParadas: 0
+    },
+    {
+        id: 7,
+        companhia: "TAP Air Portugal", // Adicionado para teste de preço alto
+        logo: "assets/img/logo-tap.png", // Criar esta imagem ou usar uma genérica
+        horaPartida: "22:00",
+        horaChegada: "10:00 (+1)",
+        duracao: "12h 00m",
+        paradas: "1 Parada",
+        origem: "São Paulo (GRU)",
+        destino: "Lisboa (LIS)",
+        preco: 4800,
+        numParadas: 1
     },
 ];
 
@@ -97,6 +110,7 @@ const aeroportos = [
     { nome: "Porto Alegre (POA)", cidade: "Porto Alegre", sigla: "POA" },
     { nome: "Manaus (MAO)", cidade: "Manaus", sigla: "MAO" },
     { nome: "Curitiba (CWB)", cidade: "Curitiba", sigla: "CWB" },
+    { nome: "Lisboa (LIS)", cidade: "Lisboa", sigla: "LIS" }, // Adicionado para teste
     // Adicione mais cidades/aeroportos conforme necessário
 ];
 
@@ -105,21 +119,67 @@ document.addEventListener('DOMContentLoaded', () => {
     const formPesquisa = document.getElementById('form-pesquisa');
     const inputOrigem = document.getElementById('origem');
     const inputDestino = document.getElementById('destino');
+    const tipoViagemSelect = document.getElementById('tipo-viagem');
+    const divDataVolta = document.getElementById('div-data-volta');
+    const inputDataVolta = document.getElementById('data-volta');
+    const mensagemErroContainer = document.getElementById('mensagem-erro-formulario'); // Referência ao container do alerta
+    const mensagemErroParagrafo = mensagemErroContainer ? mensagemErroContainer.querySelector('p') : null; // Referência ao parágrafo dentro do alerta
+
 
     if (formPesquisa) {
         // Setup do autocomplete para Origem e Destino
         setupAutocomplete(inputOrigem, 'origem-suggestions');
         setupAutocomplete(inputDestino, 'destino-suggestions');
 
+        // Função para controlar a visibilidade e o atributo 'required' da Data de Volta
+        function toggleDataVoltaVisibility() {
+            if (tipoViagemSelect.value === 'one-way') {
+                divDataVolta.style.display = 'none';
+                inputDataVolta.removeAttribute('required'); // Remove o atributo required
+            } else {
+                divDataVolta.style.display = 'block'; // ou 'grid', 'flex' dependendo do seu CSS original
+                inputDataVolta.setAttribute('required', 'true'); // Adiciona o atributo required
+            }
+        }
+
+        // Event Listener para o campo Tipo de Viagem
+        tipoViagemSelect.addEventListener('change', toggleDataVoltaVisibility);
+
+        // Chamar a função uma vez ao carregar a página para definir o estado inicial
+        toggleDataVoltaVisibility();
+
+
         formPesquisa.addEventListener('submit', (event) => {
             event.preventDefault(); // Impede o envio padrão do formulário
 
-            // Aqui você pode capturar os valores do formulário
+            // Validação do formulário
+            if (!formPesquisa.checkValidity()) {
+                if (mensagemErroParagrafo) { // Verifica se o parágrafo existe
+                    mensagemErroParagrafo.textContent = 'Por favor, preencha todos os campos obrigatórios.';
+                    mensagemErroContainer.classList.remove('hidden'); // Mostra o alerta
+                }
+                // Opcional: rolar para o primeiro campo inválido
+                const primeiroInvalido = formPesquisa.querySelector(':invalid');
+                if (primeiroInvalido) {
+                    primeiroInvalido.focus();
+                    primeiroInvalido.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return; // Impede a continuação do envio do formulário
+            } else {
+                if (mensagemErroContainer) { // Verifica se o container existe
+                    mensagemErroContainer.classList.add('hidden'); // Esconde o alerta
+                }
+            }
+
+            // Se a validação passou, captura os valores e redireciona
             const origem = inputOrigem.value;
             const destino = inputDestino.value;
             const dataIda = document.getElementById('data-ida').value;
-            const dataVolta = document.getElementById('data-volta').value;
-            const tipoViagem = document.getElementById('tipo-viagem').value;
+            let dataVolta = ''; // Inicializa como vazio
+            if (tipoViagemSelect.value !== 'one-way') { // Só captura se não for "Só Ida"
+                dataVolta = document.getElementById('data-volta').value;
+            }
+            const tipoViagem = tipoViagemSelect.value;
 
             // Exemplo de como passar os dados para a próxima página via localStorage
             localStorage.setItem('dadosBusca', JSON.stringify({
@@ -143,7 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
             suggestionsContainer = document.createElement('div');
             suggestionsContainer.id = suggestionsUniqueId;
             // Posição absoluta para sobrepor outros elementos
-            // width: "calc(100% - 8px)" para compensar o padding do pai se houver
             suggestionsContainer.className = 'absolute z-30 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1 w-full';
             inputElement.parentNode.insertBefore(suggestionsContainer, inputElement.nextSibling);
         }
@@ -248,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return false;
                 }
                 // Filtro por paradas
+                // Se for "Qualquer", não filtra por paradas
                 if (paradasSelecionadas === 'Direto' && voo.numParadas !== 0) {
                     return false;
                 }
