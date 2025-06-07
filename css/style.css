@@ -1,0 +1,21 @@
+/* css/style.css */
+
+/* Animação para o ícone do avião no Hero */
+@keyframes bounce-slow {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-bounce-slow {
+    animation: bounce-slow 4s infinite ease-in-out;
+}
+
+/* Você pode adicionar estilos personalizados aqui se o Tailwind não for suficiente */
+/* Exemplo: para um placeholder de input com cor específica */
+/* input::placeholder {
+    color: #9ca3af;
+} */
